@@ -1,0 +1,27 @@
+package.json
+./yarn.lock
+
+# testing
+/coverage
+
+# config files
+.eslintrc.cjs
+.prettierrc.cjs
+.stylelintrc.json
+.yarnrc.yml
+next.config.js
+postcss.config.js
+tailwind.config.ts
+lint-staged.config.js
+ecosystem.config.js
+
+# etc
+tsconfig.json
+README.md
+.vscode
+.husky
+
+.prettierignore
+.stylelintignore
+
+*.json

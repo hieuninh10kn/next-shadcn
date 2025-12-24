@@ -102,8 +102,9 @@ export default function UsersPage() {
 			accessorKey: 'name',
 			header: 'Họ tên',
 			cell: ({ row }) => <div className='font-semibold'>{row.getValue('name')}</div>,
-			enableResizing: false,
+			enableResizing: true,
 			enableSorting: true,
+			minSize: 320,
 		},
 		{
 			accessorKey: 'email',
@@ -151,6 +152,7 @@ export default function UsersPage() {
 				setRowSelection={setRowSelection}
 				onRowReorder={handleRowReorder} // Bật kéo thả sắp xếp hàng
 				onColumnReorder={handleColumnReorder} // Bật kéo thả sắp xếp cột
+				enableColumnReorder={false}
 				pinnedColumns={2} // Cố định 2 cột đầu (checkbox + tên)
 				onScrollBottom={handleLoadMore} // Infinite scroll
 				getGroupActions={(ids, allSelected) => (

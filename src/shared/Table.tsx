@@ -21,7 +21,7 @@ import { HTML5Backend } from 'react-dnd-html5-backend';
 
 export type DataTableProps<TData extends { id: any }, TValue> = {
 	columns: ColumnDef<TData, TValue>[];
-	data?: TData[]; // optional để dễ xử lý null/undefined
+	data?: TData[];
 	isLoading?: boolean;
 	isLoadingMore?: boolean;
 	maxHeight?: string | number;
@@ -29,6 +29,8 @@ export type DataTableProps<TData extends { id: any }, TValue> = {
 	setRowSelection?: OnChangeFn<RowSelectionState>;
 	onRowReorder?: (oldIndex: number, newIndex: number) => void;
 	onColumnReorder?: (oldIndex: number, newIndex: number) => void;
+	// MỚI: bật/tắt drag drop column
+	enableColumnReorder?: boolean;
 	total?: number;
 	pinnedColumns?: number;
 	className?: string;
@@ -78,10 +80,13 @@ const DraggableRow: FC<{
 		<TableRow
 			ref={rowRef}
 			data-state={row.getIsSelected() && 'selected'}
-			className={cn('group hover:bg-muted/50 data-[state=selected]:bg-accent', isDragging && 'opacity-50')}
+			className={cn(
+				'group hover:bg-muted/50 data-[state=selected]:bg-accent',
+				isDragging && 'opacity-50',
+				index % 2 === 0 ? 'bg-yellow-200' : 'bg-amber-900',
+			)}
 		>
-			{/* Drag Handle */}
-			<TableCell className='bg-background sticky left-0 z-20 w-10 px-2'>
+			<TableCell className='sticky left-0 z-20 w-10 px-2'>
 				<div
 					ref={dragHandleRef}
 					className='flex h-full cursor-grab items-center justify-center active:cursor-grabbing'
@@ -90,11 +95,10 @@ const DraggableRow: FC<{
 				</div>
 			</TableCell>
 
-			{/* Cells KHÔNG trigger drag */}
 			{row.getVisibleCells().map((cell: any) => (
 				<TableCell
 					key={cell.id}
-					className={cn('bg-background px-4 py-3', cell.column.getIsPinned() && 'sticky z-10')}
+					className={cn('px-4 py-3', cell.column.getIsPinned() && 'sticky z-10')}
 					style={{
 						width: cell.column.getSize(),
 						position: cell.column.getIsPinned() ? 'sticky' : 'relative',
@@ -155,23 +159,26 @@ const DraggableColumnHeader: React.FC<{
 				zIndex: header.column.getIsPinned() ? 30 : 20,
 			}}
 		>
-			<div className='flex items-center gap-2'>
+			<div className='flex items-center justify-between'>
 				{flexRender(header.column.columnDef.header, header.getContext())}
-				{header.column.getCanSort() && (
-					<button
-						onClick={header.column.getToggleSortingHandler()}
-						className='ml-auto opacity-0 transition-opacity group-hover:opacity-100'
-					>
-						{header.column.getIsSorted() === 'asc' ? (
-							<ChevronUp className='h-4 w-4' />
-						) : header.column.getIsSorted() === 'desc' ? (
-							<ChevronDown className='h-4 w-4' />
-						) : null}
-					</button>
-				)}
+				<div className='flex items-center gap-2'>
+					{header.column.getCanSort() && (
+						<button
+							onClick={header.column.getToggleSortingHandler()}
+							className='opacity-0 transition-opacity group-hover:opacity-100'
+						>
+							{header.column.getIsSorted() === 'asc' ? (
+								<ChevronUp className='h-4 w-4' />
+							) : header.column.getIsSorted() === 'desc' ? (
+								<ChevronDown className='h-4 w-4' />
+							) : (
+								<div className='h-4 w-4' /> // placeholder để giữ khoảng cách
+							)}
+						</button>
+					)}
+				</div>
 			</div>
 
-			{/* Resize handle */}
 			{header.column.getCanResize() && (
 				<div
 					onMouseDown={header.getResizeHandler()}
@@ -194,6 +201,7 @@ export function DataTable<TData extends { id: any }, TValue>({
 	setRowSelection,
 	onRowReorder,
 	onColumnReorder,
+	enableColumnReorder = false, // mặc định tắt
 	total,
 	pinnedColumns = 0,
 	className,
@@ -260,13 +268,13 @@ export function DataTable<TData extends { id: any }, TValue>({
 
 	const selectedIds = table.getSelectedRowModel().flatRows.map((r) => r.original.id);
 	const hasRowReorder = !!onRowReorder;
-	const hasColumnReorder = !!onColumnReorder;
+	const hasColumnReorder = enableColumnReorder && !!onColumnReorder;
 
 	return (
 		<DndProvider backend={HTML5Backend}>
 			<div className={cn('relative w-full', className)}>
 				{isLoading && (
-					<div className='bg-background/80 absolute inset-0 z-50 flex items-center justify-center backdrop-blur'>
+					<div className='bg-background/80 absolute inset-0 z-50 flex items-center justify-center'>
 						<div className='flex flex-col items-center gap-3'>
 							<Loader2 className='text-primary h-8 w-8 animate-spin' />
 							<span className='text-muted-foreground'>Loading...</span>
@@ -280,7 +288,7 @@ export function DataTable<TData extends { id: any }, TValue>({
 					style={{ maxHeight }}
 				>
 					<Table>
-						<TableHeader className='bg-background/95 sticky top-0 z-10 backdrop-blur'>
+						<TableHeader className='bg-background/95 sticky top-0 z-10'>
 							{table.getHeaderGroups().map((headerGroup) => (
 								<TableRow
 									key={headerGroup.id}
@@ -300,8 +308,8 @@ export function DataTable<TData extends { id: any }, TValue>({
 											<TableHead
 												key={header.id}
 												className={cn(
-													'bg-muted/30 group relative px-4 py-3 font-medium',
-													header.column.getIsPinned() && 'bg-background/95 sticky z-30',
+													'bg-muted/30 group relative border-r border-r-[#bcdb00] px-4 py-3 font-medium',
+													header.column.getIsPinned() && 'sticky z-30 bg-white',
 												)}
 												style={{
 													width: header.getSize(),
@@ -309,21 +317,24 @@ export function DataTable<TData extends { id: any }, TValue>({
 													left: header.column.getIsPinned() ? header.column.getStart('left') : undefined,
 												}}
 											>
-												<div className='flex items-center gap-2'>
+												<div className='flex items-center justify-between'>
 													{flexRender(header.column.columnDef.header, header.getContext())}
 													{header.column.getCanSort() && (
 														<button
 															onClick={header.column.getToggleSortingHandler()}
-															className='ml-auto opacity-0 transition-opacity group-hover:opacity-100'
+															className='opacity-0 transition-opacity group-hover:opacity-100'
 														>
 															{header.column.getIsSorted() === 'asc' ? (
 																<ChevronUp className='h-4 w-4' />
 															) : header.column.getIsSorted() === 'desc' ? (
 																<ChevronDown className='h-4 w-4' />
-															) : null}
+															) : (
+																<div className='h-4 w-4' />
+															)}
 														</button>
 													)}
 												</div>
+
 												{header.column.getCanResize() && (
 													<div
 														onMouseDown={header.getResizeHandler()}
@@ -348,32 +359,34 @@ export function DataTable<TData extends { id: any }, TValue>({
 											moveRow={moveRow}
 										/>
 									))
-								: table.getRowModel().rows.map((row) => (
-										<TableRow
-											key={row.id}
-											data-state={row.getIsSelected() && 'selected'}
-											className='hover:bg-muted/50 data-[state=selected]:bg-accent'
-										>
-											{getActions && (
-												<TableCell className='bg-background sticky left-0 z-10 w-10'>
-													{getActions(row.original)}
-												</TableCell>
-											)}
-											{row.getVisibleCells().map((cell: any) => (
-												<TableCell
-													key={cell.id}
-													className={cn('px-4 py-3', cell.column.getIsPinned() && 'bg-background/95 sticky z-10')}
-													style={{
-														width: cell.column.getSize(),
-														position: cell.column.getIsPinned() ? 'sticky' : 'relative',
-														left: cell.column.getIsPinned() ? cell.column.getStart('left') : undefined,
-													}}
-												>
-													{flexRender(cell.column.columnDef.cell, cell.getContext())}
-												</TableCell>
-											))}
-										</TableRow>
-									))}
+								: table.getRowModel().rows.map((row, index) => {
+										return (
+											<TableRow
+												key={row.id}
+												data-state={row.getIsSelected() && 'selected'}
+												className='hover:bg-muted/50 data-[state=selected]:bg-accent'
+											>
+												{getActions && (
+													<TableCell className='bg-background sticky left-0 z-10 w-10'>
+														{getActions(row.original)}
+													</TableCell>
+												)}
+												{row.getVisibleCells().map((cell: any) => (
+													<TableCell
+														key={cell.id}
+														className={cn('px-4 py-3', cell.column.getIsPinned() && 'bg-background/95 sticky z-10')}
+														style={{
+															width: cell.column.getSize(),
+															position: cell.column.getIsPinned() ? 'sticky' : 'relative',
+															left: cell.column.getIsPinned() ? cell.column.getStart('left') : undefined,
+														}}
+													>
+														{flexRender(cell.column.columnDef.cell, cell.getContext())}
+													</TableCell>
+												))}
+											</TableRow>
+										);
+									})}
 
 							{isLoadingMore && (
 								<TableRow>

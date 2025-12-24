@@ -99,19 +99,22 @@ export default function UsersPage() {
 			size: 50,
 		},
 		{
+			id: 'name',
 			accessorKey: 'name',
 			header: 'Họ tên',
 			cell: ({ row }) => <div className='font-semibold'>{row.getValue('name')}</div>,
 			enableResizing: true,
-			enableSorting: true,
+			enableSorting: false,
 			minSize: 320,
 		},
 		{
+			id: 'email',
 			accessorKey: 'email',
 			header: 'Email',
 			cell: ({ row }) => <div className='text-muted-foreground'>{row.getValue('email')}</div>,
 		},
 		{
+			id: 'role',
 			accessorKey: 'role',
 			header: 'Vai trò',
 			cell: ({ row }) => {
@@ -120,6 +123,7 @@ export default function UsersPage() {
 			},
 		},
 		{
+			id: 'status',
 			accessorKey: 'status',
 			header: 'Trạng thái',
 			cell: ({ row }) => (
@@ -129,6 +133,7 @@ export default function UsersPage() {
 			),
 		},
 		{
+			id: 'joinDate',
 			accessorKey: 'joinDate',
 			header: 'Ngày tham gia',
 			cell: ({ row }) => row.getValue('joinDate'),

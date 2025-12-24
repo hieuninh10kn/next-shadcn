@@ -18,6 +18,7 @@ import { ChevronDown, ChevronUp, GripVertical, Loader2 } from 'lucide-react';
 import { FC, useCallback, useEffect, useRef, useState } from 'react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+import { FaSort, FaSortDown, FaSortUp } from 'react-icons/fa';
 
 export type DataTableProps<TData extends { id: any }, TValue> = {
 	columns: ColumnDef<TData, TValue>[];
@@ -29,7 +30,6 @@ export type DataTableProps<TData extends { id: any }, TValue> = {
 	setRowSelection?: OnChangeFn<RowSelectionState>;
 	onRowReorder?: (oldIndex: number, newIndex: number) => void;
 	onColumnReorder?: (oldIndex: number, newIndex: number) => void;
-	// MỚI: bật/tắt drag drop column
 	enableColumnReorder?: boolean;
 	total?: number;
 	pinnedColumns?: number;
@@ -44,7 +44,6 @@ const ItemTypes = {
 	COLUMN: 'column',
 };
 
-// ===================== DRAGGABLE ROW =====================
 const DraggableRow: FC<{
 	row: any;
 	index: number;
@@ -112,7 +111,6 @@ const DraggableRow: FC<{
 	);
 };
 
-// ===================== DRAGGABLE COLUMN HEADER =====================
 const DraggableColumnHeader: React.FC<{
 	header: any;
 	index: number;
@@ -165,14 +163,18 @@ const DraggableColumnHeader: React.FC<{
 					{header.column.getCanSort() && (
 						<button
 							onClick={header.column.getToggleSortingHandler()}
-							className='opacity-0 transition-opacity group-hover:opacity-100'
+							className='hover:bg-accent/50 ml-3 flex h-8 w-8 items-center justify-center rounded-md transition-colors'
+							title='Sắp xếp cột này'
 						>
 							{header.column.getIsSorted() === 'asc' ? (
-								<ChevronUp className='h-4 w-4' />
+								<ChevronUp className='text-primary h-4 w-4' />
 							) : header.column.getIsSorted() === 'desc' ? (
-								<ChevronDown className='h-4 w-4' />
+								<ChevronDown className='text-primary h-4 w-4' />
 							) : (
-								<div className='h-4 w-4' /> // placeholder để giữ khoảng cách
+								<div className='relative h-4 w-4'>
+									<ChevronUp className='text-muted-foreground/60 absolute inset-0 h-4 w-4 translate-y-0.5' />
+									<ChevronDown className='text-muted-foreground/60 absolute inset-0 h-4 w-4 -translate-y-0.5' />
+								</div>
 							)}
 						</button>
 					)}
@@ -190,7 +192,6 @@ const DraggableColumnHeader: React.FC<{
 	);
 };
 
-// ===================== MAIN COMPONENT =====================
 export function DataTable<TData extends { id: any }, TValue>({
 	columns,
 	data = [],
@@ -201,7 +202,7 @@ export function DataTable<TData extends { id: any }, TValue>({
 	setRowSelection,
 	onRowReorder,
 	onColumnReorder,
-	enableColumnReorder = false, // mặc định tắt
+	enableColumnReorder = false,
 	total,
 	pinnedColumns = 0,
 	className,
@@ -228,9 +229,10 @@ export function DataTable<TData extends { id: any }, TValue>({
 			size: 150,
 			minSize: 50,
 		},
+		enableSorting: true,
+		enableColumnResizing: true,
 	});
 
-	// Pin columns
 	useEffect(() => {
 		const pinnedIds = columns
 			.slice(0, pinnedColumns)
@@ -322,14 +324,24 @@ export function DataTable<TData extends { id: any }, TValue>({
 													{header.column.getCanSort() && (
 														<button
 															onClick={header.column.getToggleSortingHandler()}
-															className='opacity-0 transition-opacity group-hover:opacity-100'
+															className='hover:bg-accent/50 ml-3 flex h-8 w-8 items-center justify-center rounded-md transition-colors'
+															title='Sắp xếp cột này'
 														>
 															{header.column.getIsSorted() === 'asc' ? (
-																<ChevronUp className='h-4 w-4' />
+																<FaSortUp
+																	className='text-primary'
+																	size={16}
+																/>
 															) : header.column.getIsSorted() === 'desc' ? (
-																<ChevronDown className='h-4 w-4' />
+																<FaSortDown
+																	className='text-primary'
+																	size={16}
+																/>
 															) : (
-																<div className='h-4 w-4' />
+																<FaSort
+																	className='text-primary'
+																	size={16}
+																/>
 															)}
 														</button>
 													)}
